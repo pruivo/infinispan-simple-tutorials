@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.infinispan.query.remote.client.ProtobufMetadataManagerConstants.PROTOBUF_METADATA_CACHE_NAME;
 
@@ -39,6 +40,8 @@ public class InfinispanRemoteQuery {
       // Use indexed cache
       URI indexedCacheURI = InfinispanRemoteQuery.class.getClassLoader().getResource("indexedCache.xml").toURI();
       builder.remoteCache(INDEXED_PEOPLE_CACHE).configurationURI(indexedCacheURI);
+      URI nonIndexedURI = InfinispanRemoteQuery.class.getClassLoader().getResource("nonIndexedCache.xml").toURI();
+      builder.remoteCache("OTHER").configurationURI(nonIndexedURI);
 
       // Connect to the server
       RemoteCacheManager client = TutorialsConnectorHelper.connect(builder);
@@ -106,6 +109,15 @@ public class InfinispanRemoteQuery {
       // Print the results
       System.out.println("SIZE " + queryResult.size());
       System.out.println(queryResult);
+
+      RemoteCache<String, AnotherEntity> other = client.getCache("OTHER");
+      other.put(UUID.randomUUID().toString(), new AnotherEntity("A"));
+      other.put(UUID.randomUUID().toString(), new AnotherEntity("A"));
+      other.put(UUID.randomUUID().toString(), new AnotherEntity("A"));
+      other.put(UUID.randomUUID().toString(), new AnotherEntity("A"));
+
+      var removed = other.query("DELETE FROM tutorial.AnotherEntity WHERE realmId = 'A'").executeStatement();
+      System.out.println("== DELETE count:" + removed);
 
       // Stop the client and release all resources
       TutorialsConnectorHelper.stop(client);
